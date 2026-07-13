@@ -44,7 +44,7 @@ def load_data():
 
 df = load_data()
 # ── Sidebar filters ───────────────────────────────────────────────────────────
-st.sidebar.image("https://img.icons8.com/fluency/96/kidney.png", width=60)
+st.sidebar.image("assets/kidney.png", width=60)
 st.sidebar.title("🫘 CKD Dashboard")
 st.sidebar.markdown("---")
 
@@ -291,8 +291,9 @@ display_cols = ["Age","Age_Group","Creatinine","BUN","GFR","Urine_Output",
                 "Protein_in_Urine","Diabetes","Hypertension","Medication",
                 "CKD_Stage","Risk_Tier","CKD_Status"]
 st.dataframe(
-    fdf[display_cols].reset_index(drop=True),
-    use_container_width=True, height=300
+    fdf[display_cols].head(500).reset_index(drop=True),
+    width="stretch",
+    height=300
 )
 
 col_dl1, col_dl2 = st.columns([1, 5])
