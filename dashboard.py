@@ -44,7 +44,7 @@ def load_data():
 
 df = load_data()
 # ── Sidebar filters ───────────────────────────────────────────────────────────
-st.sidebar.title("# 🩺 CKD Dashboard")
+st.sidebar.title(" 🩺 CKD Dashboard")
 st.sidebar.markdown("---")
 
 age_range = st.sidebar.slider(
