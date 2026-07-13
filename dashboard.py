@@ -35,10 +35,14 @@ st.markdown("""
 @st.cache_data
 def load_data():
     df = pd.read_csv("kidney_clean.csv")
+
+    # Streamlit Cloud optimization
+    if len(df) > 2000:
+        df = df.sample(2000, random_state=42)
+
     return df
 
 df = load_data()
-
 # ── Sidebar filters ───────────────────────────────────────────────────────────
 st.sidebar.image("https://img.icons8.com/fluency/96/kidney.png", width=60)
 st.sidebar.title("🫘 CKD Dashboard")
