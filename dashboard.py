@@ -44,7 +44,10 @@ def load_data():
 
 df = load_data()
 # ── Sidebar filters ───────────────────────────────────────────────────────────
-st.sidebar.image("assets/kidney.png", width=60)
+st.sidebar.image(
+    "https://img.icons8.com/fluency/96/kidney.png",
+    width=60
+)
 st.sidebar.title("🫘 CKD Dashboard")
 st.sidebar.markdown("---")
 
