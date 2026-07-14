@@ -78,7 +78,6 @@ st.sidebar.metric("Filtered Patients", f"{len(fdf):,}")
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.sidebar.image("assets/kidney.svg", width=50)
-)
 st.markdown("## 🫘 Chronic Kidney Disease — Clinical Analytics Dashboard")
 st.markdown("Comprehensive analysis of patient biomarkers, risk stratification, and CKD progression.")
 st.markdown("---")
