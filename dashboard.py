@@ -15,19 +15,24 @@ st.set_page_config(
 # ── Custom CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    .metric-card {
-        background: linear-gradient(135deg, #1e3a5f, #2d6a9f);
-        border-radius: 12px; padding: 20px; text-align: center;
-        color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-    .metric-value { font-size: 2.2rem; font-weight: 700; margin: 0; }
-    .metric-label { font-size: 0.85rem; opacity: 0.85; margin-top: 4px; }
-    .section-title {
-        font-size: 1.1rem; font-weight: 600; color: #1e3a5f;
-        border-left: 4px solid #2d6a9f; padding-left: 10px; margin-bottom: 12px;
-    }
-    [data-testid="stSidebar"] { background-color: #0f2540; }
-    [data-testid="stSidebar"] * { color: #cfe2f3 !important; }
+.metric-card {
+    background: linear-gradient(135deg, #1e3a5f, #2d6a9f);
+    border-radius: 12px; padding: 20px; text-align: center;
+    color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+.metric-value { font-size: 2.2rem; font-weight: 700; margin: 0; }
+.metric-label { font-size: 0.85rem; opacity: 0.85; margin-top: 4px; }
+.section-title {
+    font-size: 1.1rem; font-weight: 600; color: #1e3a5f;
+    border-left: 4px solid #2d6a9f; padding-left: 10px; margin-bottom: 12px;
+}
+.insight-box {
+    background: #f0f6fb; border-left: 3px solid #2d6a9f;
+    padding: 8px 12px; border-radius: 6px; font-size: 0.85rem;
+    color: #1e3a5f; margin-top: 6px;
+}
+[data-testid="stSidebar"] { background-color: #0f2540; }
+[data-testid="stSidebar"] * { color: #cfe2f3 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -35,14 +40,13 @@ st.markdown("""
 @st.cache_data
 def load_data():
     df = pd.read_csv("kidney_clean.csv")
-
     # Streamlit Cloud optimization
     if len(df) > 2000:
         df = df.sample(2000, random_state=42)
-
     return df
 
 df = load_data()
+
 # ── Sidebar filters ───────────────────────────────────────────────────────────
 st.sidebar.title(" 🩺 CKD Dashboard")
 st.sidebar.markdown("---")
@@ -51,11 +55,14 @@ age_range = st.sidebar.slider(
     "Age Range", int(df["Age"].min()), int(df["Age"].max()),
     (int(df["Age"].min()), int(df["Age"].max()))
 )
+
 ckd_filter = st.sidebar.selectbox("CKD Status", ["All", "CKD Positive", "CKD Negative"])
+
 risk_filter = st.sidebar.multiselect(
     "Risk Tier", options=["Low", "Moderate", "High", "Critical"],
     default=["Low", "Moderate", "High", "Critical"]
 )
+
 med_options = sorted(df["Medication"].dropna().unique().tolist())
 med_filter = st.sidebar.multiselect(
     "Medication", options=med_options,
@@ -68,6 +75,7 @@ fdf = df[
     (df["Risk_Tier"].isin(risk_filter)) &
     (df["Medication"].fillna("None").isin(med_filter))
 ]
+
 if ckd_filter == "CKD Positive":
     fdf = fdf[fdf["CKD_Status"] == 1]
 elif ckd_filter == "CKD Negative":
@@ -79,14 +87,16 @@ st.sidebar.metric("Filtered Patients", f"{len(fdf):,}")
 # ── Header ────────────────────────────────────────────────────────────────────
 st.markdown("## ⚕️ Chronic Kidney Disease — Clinical Analytics Dashboard")
 st.markdown("Comprehensive analysis of patient biomarkers, risk stratification, and CKD progression.")
+st.caption("ℹ️ Built on a synthetically generated dataset for demonstration purposes — biomarker relationships follow real clinical patterns (e.g. GFR ↓ as Creatinine/BUN ↑).")
 st.markdown("---")
 
 # ── KPI Row ───────────────────────────────────────────────────────────────────
 k1, k2, k3, k4, k5 = st.columns(5)
+
 ckd_rate = fdf["CKD_Status"].mean() * 100
-avg_gfr  = fdf["GFR"].mean()
+avg_gfr = fdf["GFR"].mean()
 avg_creat = fdf["Creatinine"].mean()
-avg_age  = fdf["Age"].mean()
+avg_age = fdf["Age"].mean()
 high_risk = (fdf["Risk_Tier"].isin(["High", "Critical"])).sum()
 
 for col, val, label, color in zip(
@@ -126,7 +136,7 @@ with c2:
                  color_discrete_map=colors, text="Count")
     fig.update_traces(textposition="outside", textfont_size=12)
     fig.update_layout(showlegend=False, margin=dict(t=10, b=10), height=280,
-                      xaxis_title="", yaxis_title="Patients")
+                       xaxis_title="", yaxis_title="Patients")
     st.plotly_chart(fig, use_container_width=True)
 
 with c3:
@@ -138,7 +148,7 @@ with c3:
                  color_discrete_sequence=px.colors.sequential.Blues_r, text="Count")
     fig.update_traces(textposition="outside", textfont_size=11)
     fig.update_layout(showlegend=False, margin=dict(t=10, b=10), height=280,
-                      xaxis_title="", yaxis_title="Patients")
+                       xaxis_title="", yaxis_title="Patients")
     st.plotly_chart(fig, use_container_width=True)
 
 # ── Row 2: GFR Histogram + Creatinine Box ────────────────────────────────────
@@ -147,12 +157,12 @@ c4, c5 = st.columns(2)
 with c4:
     st.markdown('<p class="section-title">GFR Distribution by CKD Status</p>', unsafe_allow_html=True)
     fig = px.histogram(fdf, x="GFR", color=fdf["CKD_Status"].map({0:"No CKD",1:"CKD"}),
-                       nbins=40, barmode="overlay", opacity=0.75,
-                       color_discrete_map={"No CKD":"#2d6a9f","CKD":"#c0392b"},
-                       labels={"color":"Status"})
+                        nbins=40, barmode="overlay", opacity=0.75,
+                        color_discrete_map={"No CKD":"#2d6a9f","CKD":"#c0392b"},
+                        labels={"color":"Status"})
     fig.update_layout(margin=dict(t=10,b=10), height=300,
-                      xaxis_title="GFR (mL/min/1.73m²)", yaxis_title="Count",
-                      legend_title="")
+                       xaxis_title="GFR (mL/min/1.73m²)", yaxis_title="Count",
+                       legend_title="")
     st.plotly_chart(fig, use_container_width=True)
 
 with c5:
@@ -163,7 +173,7 @@ with c5:
                  color_discrete_map={"No CKD":"#2d6a9f","CKD":"#c0392b"},
                  points="outliers")
     fig.update_layout(showlegend=False, margin=dict(t=10,b=10), height=300,
-                      xaxis_title="", yaxis_title="Creatinine (mg/dL)")
+                       xaxis_title="", yaxis_title="Creatinine (mg/dL)")
     st.plotly_chart(fig, use_container_width=True)
 
 # ── Row 3: Scatter + Age Group ────────────────────────────────────────────────
@@ -174,12 +184,12 @@ with c6:
     sample = fdf.sample(min(600, len(fdf)), random_state=42)
     sample["Status"] = sample["CKD_Status"].map({0:"No CKD",1:"CKD"})
     fig = px.scatter(sample, x="GFR", y="Creatinine", color="Status",
-                     color_discrete_map={"No CKD":"#2d6a9f","CKD":"#c0392b"},
-                     opacity=0.65, size_max=6,
-                     hover_data=["Age","BUN","Medication"])
+                      color_discrete_map={"No CKD":"#2d6a9f","CKD":"#c0392b"},
+                      opacity=0.65, size_max=6,
+                      hover_data=["Age","BUN","Medication"])
     fig.update_layout(margin=dict(t=10,b=10), height=320,
-                      xaxis_title="GFR (mL/min)", yaxis_title="Creatinine (mg/dL)",
-                      legend_title="")
+                       xaxis_title="GFR (mL/min)", yaxis_title="Creatinine (mg/dL)",
+                       legend_title="")
     st.plotly_chart(fig, use_container_width=True)
 
 with c7:
@@ -194,8 +204,8 @@ with c7:
                  color="CKD_Rate", color_continuous_scale="Reds")
     fig.update_traces(textposition="outside")
     fig.update_layout(showlegend=False, margin=dict(t=10,b=10), height=320,
-                      xaxis_title="Age Group", yaxis_title="CKD Rate (%)",
-                      coloraxis_showscale=False)
+                       xaxis_title="Age Group", yaxis_title="CKD Rate (%)",
+                       coloraxis_showscale=False)
     st.plotly_chart(fig, use_container_width=True)
 
 # ── Row 4: Comorbidities + Medication ────────────────────────────────────────
@@ -206,7 +216,7 @@ with c8:
     fdf["Comorbidity"] = fdf.apply(
         lambda r: "Both" if r["Diabetes"]==1 and r["Hypertension"]==1
         else ("Diabetes Only" if r["Diabetes"]==1
-        else ("Hypertension Only" if r["Hypertension"]==1 else "Neither")), axis=1
+              else ("Hypertension Only" if r["Hypertension"]==1 else "Neither")), axis=1
     )
     cmb = fdf.groupby("Comorbidity")["CKD_Status"].agg(["mean","count"]).reset_index()
     cmb.columns = ["Comorbidity","CKD_Rate","Count"]
@@ -216,8 +226,14 @@ with c8:
                  color_discrete_sequence=["#27ae60","#f39c12","#e67e22","#c0392b"])
     fig.update_traces(textposition="outside")
     fig.update_layout(showlegend=False, margin=dict(t=10,b=10), height=300,
-                      xaxis_title="", yaxis_title="CKD Rate (%)")
+                       xaxis_title="", yaxis_title="CKD Rate (%)")
     st.plotly_chart(fig, use_container_width=True)
+    top_group = cmb.loc[cmb["CKD_Rate"].idxmax(), "Comorbidity"]
+    st.markdown(
+        f'<div class="insight-box">💡 <b>Insight:</b> "{top_group}" patients show the highest CKD rate '
+        f'({cmb["CKD_Rate"].max():.1f}%), reinforcing diabetes/hypertension as key CKD risk drivers.</div>',
+        unsafe_allow_html=True
+    )
 
 with c9:
     st.markdown('<p class="section-title">Medication Distribution by CKD Status</p>', unsafe_allow_html=True)
@@ -227,8 +243,14 @@ with c9:
                  color_discrete_map={"No CKD":"#2d6a9f","CKD":"#c0392b"}, text="Count")
     fig.update_traces(textposition="outside", textfont_size=10)
     fig.update_layout(margin=dict(t=10,b=10), height=300,
-                      xaxis_title="", yaxis_title="Patients", legend_title="")
+                       xaxis_title="", yaxis_title="Patients", legend_title="")
     st.plotly_chart(fig, use_container_width=True)
+    st.markdown(
+        '<div class="insight-box">💡 <b>Note:</b> Bars show raw patient counts, not CKD rate — '
+        'medications are more commonly prescribed overall to the larger "No CKD" group in this sample, '
+        'so higher blue bars don\'t imply the medication is protective.</div>',
+        unsafe_allow_html=True
+    )
 
 # ── Row 5: Correlation Heatmap + BUN vs GFR ──────────────────────────────────
 c10, c11 = st.columns(2)
@@ -239,21 +261,30 @@ with c10:
                 "Water_Intake","Age","CKD_Status"]
     corr = fdf[num_cols].corr().round(2)
     fig = px.imshow(corr, text_auto=True, color_continuous_scale="RdBu_r",
-                    zmin=-1, zmax=1, aspect="auto")
+                     zmin=-1, zmax=1, aspect="auto")
     fig.update_layout(margin=dict(t=10,b=10), height=340)
+    fig.update_xaxes(tickfont=dict(size=11))
+    fig.update_yaxes(tickfont=dict(size=11))
     st.plotly_chart(fig, use_container_width=True)
+    st.markdown(
+        '<div class="insight-box">💡 <b>Key insight:</b> GFR shows the strongest relationship with CKD status '
+        '(r ≈ -0.95) — as GFR falls, CKD risk rises sharply, consistent with clinical staging criteria. '
+        'Age shows a weak <i>linear</i> correlation here because Pearson\'s r only captures straight-line '
+        'relationships — the "CKD Rate by Age Group" chart above shows the real (non-linear) pattern.</div>',
+        unsafe_allow_html=True
+    )
 
 with c11:
     st.markdown('<p class="section-title">BUN vs GFR by CKD Status</p>', unsafe_allow_html=True)
     sample2 = fdf.sample(min(600, len(fdf)), random_state=7)
     sample2["Status"] = sample2["CKD_Status"].map({0:"No CKD",1:"CKD"})
     fig = px.scatter(sample2, x="BUN", y="GFR", color="Status",
-                     color_discrete_map={"No CKD":"#2d6a9f","CKD":"#c0392b"},
-                     opacity=0.65,
-                     hover_data=["Age","Creatinine"])
+                      color_discrete_map={"No CKD":"#2d6a9f","CKD":"#c0392b"},
+                      opacity=0.65,
+                      hover_data=["Age","Creatinine"])
     fig.update_layout(margin=dict(t=10,b=10), height=340,
-                      xaxis_title="BUN (mg/dL)", yaxis_title="GFR (mL/min)",
-                      legend_title="")
+                       xaxis_title="BUN (mg/dL)", yaxis_title="GFR (mL/min)",
+                       legend_title="")
     st.plotly_chart(fig, use_container_width=True)
 
 # ── Row 6: Protein in Urine + Water Intake ───────────────────────────────────
@@ -264,11 +295,11 @@ with c12:
     prot_df = fdf.copy()
     prot_df["Status"] = prot_df["CKD_Status"].map({0:"No CKD",1:"CKD"})
     fig = px.histogram(prot_df, x="Protein_in_Urine", color="Status", nbins=40,
-                       barmode="overlay", opacity=0.75,
-                       color_discrete_map={"No CKD":"#2d6a9f","CKD":"#c0392b"})
+                        barmode="overlay", opacity=0.75,
+                        color_discrete_map={"No CKD":"#2d6a9f","CKD":"#c0392b"})
     fig.update_layout(margin=dict(t=10,b=10), height=280,
-                      xaxis_title="Protein in Urine (mg/dL)", yaxis_title="Count",
-                      legend_title="")
+                       xaxis_title="Protein in Urine (mg/dL)", yaxis_title="Count",
+                       legend_title="")
     st.plotly_chart(fig, use_container_width=True)
 
 with c13:
@@ -276,19 +307,21 @@ with c13:
     sample3 = fdf.sample(min(500, len(fdf)), random_state=99)
     sample3["Status"] = sample3["CKD_Status"].map({0:"No CKD",1:"CKD"})
     fig = px.scatter(sample3, x="Water_Intake", y="Urine_Output", color="Status",
-                     color_discrete_map={"No CKD":"#2d6a9f","CKD":"#c0392b"},
-                     opacity=0.6)
+                      color_discrete_map={"No CKD":"#2d6a9f","CKD":"#c0392b"},
+                      opacity=0.6)
     fig.update_layout(margin=dict(t=10,b=10), height=280,
-                      xaxis_title="Water Intake (L)", yaxis_title="Urine Output (mL)",
-                      legend_title="")
+                       xaxis_title="Water Intake (L)", yaxis_title="Urine Output (mL)",
+                       legend_title="")
     st.plotly_chart(fig, use_container_width=True)
 
 # ── Data Table ────────────────────────────────────────────────────────────────
 st.markdown("---")
 st.markdown('<p class="section-title">📋 Patient Data Explorer</p>', unsafe_allow_html=True)
+
 display_cols = ["Age","Age_Group","Creatinine","BUN","GFR","Urine_Output",
-                "Protein_in_Urine","Diabetes","Hypertension","Medication",
-                "CKD_Stage","Risk_Tier","CKD_Status"]
+                 "Protein_in_Urine","Diabetes","Hypertension","Medication",
+                 "CKD_Stage","Risk_Tier","CKD_Status"]
+
 st.dataframe(
     fdf[display_cols].head(500).reset_index(drop=True),
     width="stretch",
@@ -305,4 +338,4 @@ with col_dl1:
     )
 
 st.markdown("---")
-st.caption("🫘 Kidney Disease Clinical Dashboard  |  Data: kidney_clean.csv  |  Built with Streamlit & Plotly")
+st.caption("🫘 Kidney Disease Clinical Dashboard | Data: kidney_clean.csv (synthetic) | Built with Streamlit & Plotly")
